@@ -5,7 +5,7 @@ void main() {
 }
 
 // =====================================================
-// 1. APP
+// APP
 // =====================================================
 
 class MyApp extends StatelessWidget {
@@ -15,178 +15,321 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Product App',
+      title: 'Social Profile',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const ProductScreen(),
+      home: const SocialProfileScreen(),
     );
   }
 }
 
 // =====================================================
-// 2. PRODUCT MODEL
+// PROFILE SCREEN
 // =====================================================
 
-class Product {
-  final String name;
-  final double price;
-  final String category;
-  final IconData icon;
+class SocialProfileScreen extends StatefulWidget {
+  const SocialProfileScreen({super.key});
 
-  const Product({
-    required this.name,
-    required this.price,
-    required this.category,
-    required this.icon,
-  });
+  @override
+  State<SocialProfileScreen> createState() {
+    return _SocialProfileScreenState();
+  }
 }
 
 // =====================================================
-// 3. PRODUCT SCREEN
+// STATE
 // =====================================================
 
-class ProductScreen extends StatelessWidget {
-  const ProductScreen({super.key});
+class _SocialProfileScreenState
+    extends State<SocialProfileScreen> {
 
-  // Product data
-  static const List<Product> products = [
-    Product(
-      name: 'Laptop',
-      price: 65000,
-      category: 'Electronics',
-      icon: Icons.laptop,
-    ),
-    Product(
-      name: 'Smartphone',
-      price: 25000,
-      category: 'Electronics',
-      icon: Icons.phone_android,
-    ),
-    Product(
-      name: 'Headphones',
-      price: 3500,
-      category: 'Accessories',
-      icon: Icons.headphones,
-    ),
-    Product(
-      name: 'Keyboard',
-      price: 1500,
-      category: 'Accessories',
-      icon: Icons.keyboard,
-    ),
-    Product(
-      name: 'Mouse',
-      price: 800,
-      category: 'Accessories',
-      icon: Icons.mouse,
-    ),
-    Product(
-      name: 'Smart Watch',
-      price: 5000,
-      category: 'Wearables',
-      icon: Icons.watch,
-    ),
-  ];
+  bool isFollowing = false;
+
+  int followers = 850;
+
+  void toggleFollow() {
+    setState(() {
+      if (isFollowing) {
+        isFollowing = false;
+        followers--;
+      } else {
+        isFollowing = true;
+        followers++;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Products'),
-
+        title: const Text('Profile'),
         actions: [
           IconButton(
-            onPressed: () {
-              print('Search clicked');
-            },
-            icon: const Icon(Icons.search),
+            onPressed: () {},
+            icon: const Icon(Icons.more_vert),
           ),
         ],
       ),
 
-      // =================================================
-      // LISTVIEW.BUILDER
-      // =================================================
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
 
-      body: ListView.builder(
-        padding: const EdgeInsets.all(12),
+            // =================================================
+            // PROFILE HEADER
+            // =================================================
 
-        // Number of items
-        itemCount: products.length,
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
 
-        // Creates each item
-        itemBuilder: (context, index) {
-          // Get current product
-          final Product product = products[index];
+                // -----------------------------
+                // COVER IMAGE / BACKGROUND
+                // -----------------------------
 
-          // Return UI for current product
-          return ProductCard(
-            product: product,
-          );
-        },
+                Container(
+                  width: double.infinity,
+                  height: 180,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.blue.shade400,
+                        Colors.blue.shade800,
+                      ],
+                    ),
+                  ),
+                ),
+
+                // -----------------------------
+                // PROFILE IMAGE
+                // -----------------------------
+
+                Positioned(
+                  bottom: -60,
+                  left: 0,
+                  right: 0,
+
+                  child: Center(
+                    child: Container(
+                      width: 120,
+                      height: 120,
+
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        border: Border.all(
+                          width: 5,
+                          color: Colors.white,
+                        ),
+                      ),
+
+                      child: const CircleAvatar(
+                        backgroundColor: Colors.blue,
+                        child: Icon(
+                          Icons.person,
+                          size: 70,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // Space for overlapping profile image
+            const SizedBox(height: 75),
+
+            // =================================================
+            // NAME
+            // =================================================
+
+            const Text(
+              'Praveen',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 5),
+
+            const Text(
+              'Flutter Developer',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+            ),
+
+            const SizedBox(height: 25),
+
+            // =================================================
+            // STATISTICS
+            // =================================================
+
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+              ),
+
+              child: Row(
+                children: [
+
+                  Expanded(
+                    child: _buildStat(
+                      'Projects',
+                      '12',
+                    ),
+                  ),
+
+                  Expanded(
+                    child: _buildStat(
+                      'Followers',
+                      followers.toString(),
+                    ),
+                  ),
+
+                  Expanded(
+                    child: _buildStat(
+                      'Following',
+                      '320',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            // =================================================
+            // FOLLOW BUTTON
+            // =================================================
+
+            SizedBox(
+              width: 180,
+              height: 45,
+
+              child: ElevatedButton(
+                onPressed: toggleFollow,
+
+                child: Text(
+                  isFollowing
+                      ? 'Following'
+                      : 'Follow',
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            // =================================================
+            // ABOUT
+            // =================================================
+
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+              ),
+
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+
+                children: [
+
+                  const Text(
+                    'About',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  const Text(
+                    'Flutter developer passionate about '
+                    'building mobile applications and '
+                    'learning new technologies.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      height: 1.5,
+                    ),
+                  ),
+
+                  const SizedBox(height: 25),
+
+                  const Text(
+                    'Skills',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+
+                    children: const [
+                      Chip(
+                        label: Text('Flutter'),
+                      ),
+                      Chip(
+                        label: Text('Dart'),
+                      ),
+                      Chip(
+                        label: Text('Firebase'),
+                      ),
+                      Chip(
+                        label: Text('UI Design'),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 30),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
-}
 
-// =====================================================
-// 4. PRODUCT CARD
-// =====================================================
+  // =====================================================
+  // STAT WIDGET
+  // =====================================================
 
-class ProductCard extends StatelessWidget {
-  final Product product;
+  Widget _buildStat(
+    String title,
+    String value,
+  ) {
+    return Column(
+      children: [
 
-  const ProductCard({
-    super.key,
-    required this.product,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(
-        bottom: 12,
-      ),
-
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
-
-        // LEFT SIDE
-        leading: CircleAvatar(
-          child: Icon(
-            product.icon,
-          ),
-        ),
-
-        // PRODUCT NAME
-        title: Text(
-          product.name,
+        Text(
+          value,
           style: const TextStyle(
+            fontSize: 22,
             fontWeight: FontWeight.bold,
-            fontSize: 17,
           ),
         ),
 
-        // CATEGORY
-        subtitle: Text(
-          product.category,
-        ),
+        const SizedBox(height: 5),
 
-        // RIGHT SIDE
-        trailing: Text(
-          '₹${product.price.toStringAsFixed(0)}',
+        Text(
+          title,
           style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
+            color: Colors.grey,
           ),
         ),
-
-        // WHEN USER TAPS
-        onTap: () {
-          print('${product.name} selected');
-        },
-      ),
+      ],
     );
   }
 }
