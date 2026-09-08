@@ -1,7 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 void main() {
+  // Register CartController
+  Get.put(CartController());
+
   runApp(const MyApp());
+}
+
+// =====================================================
+// PRODUCT MODEL
+// =====================================================
+
+class Product {
+  final String name;
+  final double price;
+  final IconData icon;
+
+  const Product({
+    required this.name,
+    required this.price,
+    required this.icon,
+  });
+}
+
+// =====================================================
+// CART CONTROLLER
+// =====================================================
+
+class CartController extends GetxController {
+  // Observable list
+  final RxList<Product> cartItems = <Product>[].obs;
+
+  // Add product
+  void addToCart(Product product) {
+    cartItems.add(product);
+  }
+
+  // Remove product
+  void removeFromCart(Product product) {
+    cartItems.remove(product);
+  }
+
+  // Clear cart
+  void clearCart() {
+    cartItems.clear();
+  }
+
+  // Calculate total price
+  double get totalPrice {
+    double total = 0;
+
+    for (final product in cartItems) {
+      total += product.price;
+    }
+
+    return total;
+  }
 }
 
 // =====================================================
@@ -13,323 +68,364 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Social Profile',
+
+      title: 'Shopping Cart',
+
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const SocialProfileScreen(),
+
+      // IMPORTANT:
+      // ProductScreen constructor is not const
+      home: ProductScreen(),
     );
   }
 }
 
 // =====================================================
-// PROFILE SCREEN
+// PRODUCT SCREEN
 // =====================================================
 
-class SocialProfileScreen extends StatefulWidget {
-  const SocialProfileScreen({super.key});
+class ProductScreen extends StatelessWidget {
+  ProductScreen({super.key});
 
-  @override
-  State<SocialProfileScreen> createState() {
-    return _SocialProfileScreenState();
-  }
-}
-
-// =====================================================
-// STATE
-// =====================================================
-
-class _SocialProfileScreenState
-    extends State<SocialProfileScreen> {
-
-  bool isFollowing = false;
-
-  int followers = 850;
-
-  void toggleFollow() {
-    setState(() {
-      if (isFollowing) {
-        isFollowing = false;
-        followers--;
-      } else {
-        isFollowing = true;
-        followers++;
-      }
-    });
-  }
+  // Product list
+  final List<Product> products = const [
+    Product(
+      name: 'Laptop',
+      price: 65000,
+      icon: Icons.laptop,
+    ),
+    Product(
+      name: 'Smartphone',
+      price: 25000,
+      icon: Icons.phone_android,
+    ),
+    Product(
+      name: 'Headphones',
+      price: 3500,
+      icon: Icons.headphones,
+    ),
+    Product(
+      name: 'Keyboard',
+      price: 1500,
+      icon: Icons.keyboard,
+    ),
+    Product(
+      name: 'Mouse',
+      price: 800,
+      icon: Icons.mouse,
+    ),
+    Product(
+      name: 'Smart Watch',
+      price: 5000,
+      icon: Icons.watch,
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
+    // Get existing controller
+    final CartController cartController =
+        Get.find<CartController>();
+
     return Scaffold(
+      // =================================================
+      // APP BAR
+      // =================================================
+
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const Text('Products'),
+
         actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.more_vert),
+          Stack(
+            children: [
+              // Cart button
+              IconButton(
+                onPressed: () {
+                  Get.to(
+                    () => const CartScreen(),
+                  );
+                },
+                icon: const Icon(
+                  Icons.shopping_cart,
+                ),
+              ),
+
+              // Cart count
+              Positioned(
+                right: 5,
+                top: 5,
+                child: Obx(
+                  () => CircleAvatar(
+                    radius: 9,
+                    child: Text(
+                      '${cartController.cartItems.length}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
 
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
+      // =================================================
+      // PRODUCT LIST
+      // =================================================
 
-            // =================================================
-            // PROFILE HEADER
-            // =================================================
+      body: ListView.builder(
+        padding: const EdgeInsets.all(12),
 
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
+        itemCount: products.length,
 
-                // -----------------------------
-                // COVER IMAGE / BACKGROUND
-                // -----------------------------
+        itemBuilder: (context, index) {
+          final Product product = products[index];
 
-                Container(
-                  width: double.infinity,
-                  height: 180,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.blue.shade400,
-                        Colors.blue.shade800,
-                      ],
-                    ),
-                  ),
-                ),
-
-                // -----------------------------
-                // PROFILE IMAGE
-                // -----------------------------
-
-                Positioned(
-                  bottom: -60,
-                  left: 0,
-                  right: 0,
-
-                  child: Center(
-                    child: Container(
-                      width: 120,
-                      height: 120,
-
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                        border: Border.all(
-                          width: 5,
-                          color: Colors.white,
-                        ),
-                      ),
-
-                      child: const CircleAvatar(
-                        backgroundColor: Colors.blue,
-                        child: Icon(
-                          Icons.person,
-                          size: 70,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+          return Card(
+            margin: const EdgeInsets.only(
+              bottom: 12,
             ),
 
-            // Space for overlapping profile image
-            const SizedBox(height: 75),
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(12),
 
-            // =================================================
-            // NAME
-            // =================================================
-
-            const Text(
-              'Praveen',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 5),
-
-            const Text(
-              'Flutter Developer',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            // =================================================
-            // STATISTICS
-            // =================================================
-
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
+              // Product icon
+              leading: CircleAvatar(
+                child: Icon(product.icon),
               ),
 
-              child: Row(
-                children: [
-
-                  Expanded(
-                    child: _buildStat(
-                      'Projects',
-                      '12',
-                    ),
-                  ),
-
-                  Expanded(
-                    child: _buildStat(
-                      'Followers',
-                      followers.toString(),
-                    ),
-                  ),
-
-                  Expanded(
-                    child: _buildStat(
-                      'Following',
-                      '320',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // =================================================
-            // FOLLOW BUTTON
-            // =================================================
-
-            SizedBox(
-              width: 180,
-              height: 45,
-
-              child: ElevatedButton(
-                onPressed: toggleFollow,
-
-                child: Text(
-                  isFollowing
-                      ? 'Following'
-                      : 'Follow',
+              // Product name
+              title: Text(
+                product.name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 17,
                 ),
               ),
-            ),
 
-            const SizedBox(height: 30),
-
-            // =================================================
-            // ABOUT
-            // =================================================
-
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
+              // Product price
+              subtitle: Text(
+                '₹${product.price.toStringAsFixed(0)}',
               ),
 
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+              // Add button
+              trailing: ElevatedButton(
+                onPressed: () {
+                  cartController.addToCart(product);
 
-                children: [
-
-                  const Text(
-                    'About',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  const Text(
-                    'Flutter developer passionate about '
-                    'building mobile applications and '
-                    'learning new technologies.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      height: 1.5,
-                    ),
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  const Text(
-                    'Skills',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-
-                    children: const [
-                      Chip(
-                        label: Text('Flutter'),
-                      ),
-                      Chip(
-                        label: Text('Dart'),
-                      ),
-                      Chip(
-                        label: Text('Firebase'),
-                      ),
-                      Chip(
-                        label: Text('UI Design'),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 30),
-                ],
+                  Get.snackbar(
+                    'Added to Cart',
+                    '${product.name} added to cart',
+                    snackPosition:
+                        SnackPosition.BOTTOM,
+                  );
+                },
+                child: const Text('Add'),
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
+}
 
-  // =====================================================
-  // STAT WIDGET
-  // =====================================================
+// =====================================================
+// CART SCREEN
+// =====================================================
 
-  Widget _buildStat(
-    String title,
-    String value,
-  ) {
-    return Column(
-      children: [
+class CartScreen extends StatelessWidget {
+  const CartScreen({super.key});
 
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
+  @override
+  Widget build(BuildContext context) {
+    // Get the same controller
+    final CartController cartController =
+        Get.find<CartController>();
+
+    return Scaffold(
+      // =================================================
+      // APP BAR
+      // =================================================
+
+      appBar: AppBar(
+        title: const Text('My Cart'),
+
+        actions: [
+          IconButton(
+            onPressed: () {
+              cartController.clearCart();
+
+              Get.snackbar(
+                'Cart',
+                'Cart cleared',
+                snackPosition:
+                    SnackPosition.BOTTOM,
+              );
+            },
+            icon: const Icon(
+              Icons.delete_sweep,
+            ),
           ),
-        ),
+        ],
+      ),
 
-        const SizedBox(height: 5),
+      // =================================================
+      // CART BODY
+      // =================================================
 
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.grey,
-          ),
-        ),
-      ],
+      body: Obx(
+        () {
+          // Empty cart
+          if (cartController.cartItems.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment:
+                    MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.shopping_cart_outlined,
+                    size: 80,
+                    color: Colors.grey,
+                  ),
+
+                  SizedBox(height: 20),
+
+                  Text(
+                    'Your cart is empty',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight:
+                          FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // Cart contains products
+          return Column(
+            children: [
+              // =================================================
+              // CART ITEMS
+              // =================================================
+
+              Expanded(
+                child: ListView.builder(
+                  padding:
+                      const EdgeInsets.all(12),
+
+                  itemCount:
+                      cartController.cartItems.length,
+
+                  itemBuilder: (context, index) {
+                    final Product product =
+                        cartController
+                            .cartItems[index];
+
+                    return Card(
+                      margin:
+                          const EdgeInsets.only(
+                        bottom: 10,
+                      ),
+
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          child: Icon(
+                            product.icon,
+                          ),
+                        ),
+
+                        title: Text(
+                          product.name,
+                          style:
+                              const TextStyle(
+                            fontWeight:
+                                FontWeight.bold,
+                          ),
+                        ),
+
+                        subtitle: Text(
+                          '₹${product.price.toStringAsFixed(0)}',
+                        ),
+
+                        trailing: IconButton(
+                          onPressed: () {
+                            cartController
+                                .removeFromCart(
+                              product,
+                            );
+                          },
+                          icon: const Icon(
+                            Icons
+                                .remove_circle,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // =================================================
+              // TOTAL
+              // =================================================
+
+              Container(
+                width: double.infinity,
+
+                padding:
+                    const EdgeInsets.all(20),
+
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color:
+                          Colors.grey.shade300,
+                    ),
+                  ),
+                ),
+
+                child: Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment
+                          .spaceBetween,
+
+                  children: [
+                    const Text(
+                      'Total',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight:
+                            FontWeight.bold,
+                      ),
+                    ),
+
+                    Obx(
+                      () => Text(
+                        '₹${cartController.totalPrice.toStringAsFixed(0)}',
+                        style:
+                            const TextStyle(
+                          fontSize: 20,
+                          fontWeight:
+                              FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }
