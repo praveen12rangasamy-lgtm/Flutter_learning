@@ -1,144 +1,74 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const MyApp());
 }
 
 // =====================================================
-// TASK MODEL
+// USER MODEL
 // =====================================================
 
-class Task {
-  final String title;
-  final bool isCompleted;
+class User {
+  final int id;
+  final String name;
+  final String email;
+  final String phone;
+  final String website;
 
-  const Task({
-    required this.title,
-    this.isCompleted = false,
+  const User({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.phone,
+    required this.website,
   });
 
-  Task copyWith({
-    String? title,
-    bool? isCompleted,
-  }) {
-    return Task(
-      title: title ?? this.title,
-      isCompleted: isCompleted ?? this.isCompleted,
+  // JSON → Dart Object
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'],
+      name: json['name'],
+      email: json['email'],
+      phone: json['phone'],
+      website: json['website'],
     );
   }
 }
 
 // =====================================================
-// EVENTS
+// API SERVICE
 // =====================================================
 
-// Base event
-abstract class TaskEvent {}
+class ApiService {
+  static const String url =
+      'https://jsonplaceholder.typicode.com/users';
 
-// Add a task
-class AddTask extends TaskEvent {
-  final String title;
-
-  AddTask(this.title);
-}
-
-// Toggle task
-class ToggleTask extends TaskEvent {
-  final int index;
-
-  ToggleTask(this.index);
-}
-
-// Delete task
-class DeleteTask extends TaskEvent {
-  final int index;
-
-  DeleteTask(this.index);
-}
-
-// =====================================================
-// STATE
-// =====================================================
-
-class TaskState {
-  final List<Task> tasks;
-
-  const TaskState({
-    this.tasks = const [],
-  });
-
-  TaskState copyWith({
-    List<Task>? tasks,
-  }) {
-    return TaskState(
-      tasks: tasks ?? this.tasks,
+  Future<List<User>> fetchUsers() async {
+    // Make GET request
+    final response = await http.get(
+      Uri.parse(url),
     );
-  }
-}
 
-// =====================================================
-// BLOC
-// =====================================================
+    // Check response
+    if (response.statusCode == 200) {
+      // JSON string → Dart object
+      final List<dynamic> data =
+          jsonDecode(response.body);
 
-class TaskBloc extends Bloc<TaskEvent, TaskState> {
-  TaskBloc() : super(const TaskState()) {
-
-    // -----------------------------------------------
-    // ADD TASK
-    // -----------------------------------------------
-
-    on<AddTask>((event, emit) {
-      final updatedTasks = [
-        ...state.tasks,
-        Task(title: event.title),
-      ];
-
-      emit(
-        state.copyWith(
-          tasks: updatedTasks,
-        ),
+      // Convert JSON objects → User objects
+      return data
+          .map(
+            (json) => User.fromJson(json),
+          )
+          .toList();
+    } else {
+      throw Exception(
+        'Failed to load users',
       );
-    });
-
-    // -----------------------------------------------
-    // TOGGLE TASK
-    // -----------------------------------------------
-
-    on<ToggleTask>((event, emit) {
-      final updatedTasks =
-          List<Task>.from(state.tasks);
-
-      final task = updatedTasks[event.index];
-
-      updatedTasks[event.index] =
-          task.copyWith(
-        isCompleted: !task.isCompleted,
-      );
-
-      emit(
-        state.copyWith(
-          tasks: updatedTasks,
-        ),
-      );
-    });
-
-    // -----------------------------------------------
-    // DELETE TASK
-    // -----------------------------------------------
-
-    on<DeleteTask>((event, emit) {
-      final updatedTasks =
-          List<Task>.from(state.tasks);
-
-      updatedTasks.removeAt(event.index);
-
-      emit(
-        state.copyWith(
-          tasks: updatedTasks,
-        ),
-      );
-    });
+    }
   }
 }
 
@@ -154,273 +84,282 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
 
-      title: 'BLoC Task Manager',
+      title: 'API Demo',
 
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
 
-      home: BlocProvider(
-        create: (context) => TaskBloc(),
-
-        child: const TaskScreen(),
-      ),
+      home: const UserScreen(),
     );
   }
 }
 
 // =====================================================
-// TASK SCREEN
+// USER SCREEN
 // =====================================================
 
-class TaskScreen extends StatelessWidget {
-  const TaskScreen({super.key});
+class UserScreen extends StatefulWidget {
+  const UserScreen({super.key});
+
+  @override
+  State<UserScreen> createState() {
+    return _UserScreenState();
+  }
+}
+
+// =====================================================
+// USER SCREEN STATE
+// =====================================================
+
+class _UserScreenState
+    extends State<UserScreen> {
+
+  // API service
+  final ApiService apiService = ApiService();
+
+  // User list
+  List<User> users = [];
+
+  // Loading status
+  bool isLoading = true;
+
+  // Error message
+  String errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+
+    fetchUsers();
+  }
+
+  // ===================================================
+  // FETCH USERS
+  // ===================================================
+
+  Future<void> fetchUsers() async {
+    try {
+      setState(() {
+        isLoading = true;
+        errorMessage = '';
+      });
+
+      final result =
+          await apiService.fetchUsers();
+
+      setState(() {
+        users = result;
+        isLoading = false;
+      });
+    } catch (error) {
+      setState(() {
+        isLoading = false;
+        errorMessage =
+            'Failed to load users';
+      });
+    }
+  }
+
+  // ===================================================
+  // BUILD
+  // ===================================================
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
-      // =================================================
-      // APP BAR
-      // =================================================
-
       appBar: AppBar(
-        title: const Text('Task Manager'),
+        title: const Text(
+          'Users from API',
+        ),
 
         actions: [
           IconButton(
-            onPressed: () {
-              showAddTaskDialog(context);
-            },
-
+            onPressed: fetchUsers,
             icon: const Icon(
-              Icons.add,
+              Icons.refresh,
             ),
           ),
         ],
       ),
 
-      // =================================================
-      // BODY
-      // =================================================
-
-      body: BlocBuilder<TaskBloc, TaskState>(
-        builder: (context, state) {
-
-          // Empty state
-          if (state.tasks.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment:
-                    MainAxisAlignment.center,
-
-                children: [
-                  Icon(
-                    Icons.task_alt,
-                    size: 80,
-                    color: Colors.grey,
-                  ),
-
-                  SizedBox(height: 20),
-
-                  Text(
-                    'No tasks yet',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
-
-                  SizedBox(height: 8),
-
-                  Text(
-                    'Tap + to add a task',
-                    style: TextStyle(
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          // Task list
-          return ListView.builder(
-            padding: const EdgeInsets.all(12),
-
-            itemCount: state.tasks.length,
-
-            itemBuilder: (context, index) {
-
-              final task = state.tasks[index];
-
-              return Card(
-                margin: const EdgeInsets.only(
-                  bottom: 10,
-                ),
-
-                child: ListTile(
-
-                  // Checkbox
-                  leading: Checkbox(
-                    value: task.isCompleted,
-
-                    onChanged: (_) {
-                      context.read<TaskBloc>().add(
-                        ToggleTask(index),
-                      );
-                    },
-                  ),
-
-                  // Task title
-                  title: Text(
-                    task.title,
-
-                    style: TextStyle(
-                      fontSize: 16,
-
-                      decoration:
-                          task.isCompleted
-                              ? TextDecoration
-                                  .lineThrough
-                              : TextDecoration.none,
-                    ),
-                  ),
-
-                  // Delete
-                  trailing: IconButton(
-                    onPressed: () {
-
-                      context
-                          .read<TaskBloc>()
-                          .add(
-                            DeleteTask(index),
-                          );
-                    },
-
-                    icon: const Icon(
-                      Icons.delete,
-                    ),
-                  ),
-
-                  onTap: () {
-                    context
-                        .read<TaskBloc>()
-                        .add(
-                          ToggleTask(index),
-                        );
-                  },
-                ),
-              );
-            },
-          );
-        },
-      ),
-
-      // =================================================
-      // BOTTOM TASK COUNT
-      // =================================================
-
-      bottomNavigationBar:
-          BlocBuilder<TaskBloc, TaskState>(
-        builder: (context, state) {
-
-          final completedTasks =
-              state.tasks
-                  .where(
-                    (task) => task.isCompleted,
-                  )
-                  .length;
-
-          return Container(
-            padding: const EdgeInsets.all(16),
-
-            child: Text(
-              'Tasks: ${state.tasks.length}  |  '
-              'Completed: $completedTasks',
-
-              textAlign: TextAlign.center,
-
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight:
-                    FontWeight.bold,
-              ),
-            ),
-          );
-        },
-      ),
+      body: buildBody(),
     );
   }
 
   // ===================================================
-  // ADD TASK DIALOG
+  // BODY
   // ===================================================
 
-  void showAddTaskDialog(BuildContext context) {
+  Widget buildBody() {
 
-    final TextEditingController controller =
-        TextEditingController();
+    // -----------------------------------------------
+    // LOADING
+    // -----------------------------------------------
 
-    showDialog(
-      context: context,
+    if (isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
 
-      builder: (dialogContext) {
+    // -----------------------------------------------
+    // ERROR
+    // -----------------------------------------------
 
-        return AlertDialog(
-          title: const Text(
-            'Add Task',
-          ),
+    if (errorMessage.isNotEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.center,
 
-          content: TextField(
-            controller: controller,
-
-            autofocus: true,
-
-            decoration:
-                const InputDecoration(
-              labelText: 'Task',
-              hintText:
-                  'Enter task name',
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 70,
+              color: Colors.red,
             ),
-          ),
 
-          actions: [
+            const SizedBox(height: 20),
 
-            // Cancel
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-
-              child: const Text(
-                'Cancel',
+            Text(
+              errorMessage,
+              style: const TextStyle(
+                fontSize: 18,
               ),
             ),
 
-            // Add
+            const SizedBox(height: 20),
+
             ElevatedButton(
+              onPressed: fetchUsers,
+              child: const Text(
+                'Try Again',
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // -----------------------------------------------
+    // USERS
+    // -----------------------------------------------
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+
+      itemCount: users.length,
+
+      itemBuilder: (context, index) {
+        final User user = users[index];
+
+        return Card(
+          margin: const EdgeInsets.only(
+            bottom: 12,
+          ),
+
+          child: ListTile(
+            contentPadding:
+                const EdgeInsets.all(12),
+
+            leading: CircleAvatar(
+              child: Text(
+                user.name[0],
+              ),
+            ),
+
+            title: Text(
+              user.name,
+              style: const TextStyle(
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            subtitle: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+
+              children: [
+                const SizedBox(height: 5),
+
+                Text(user.email),
+
+                const SizedBox(height: 3),
+
+                Text(user.phone),
+              ],
+            ),
+
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+            ),
+
+            onTap: () {
+              showUserDetails(
+                context,
+                user,
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // ===================================================
+  // USER DETAILS
+  // ===================================================
+
+  void showUserDetails(
+    BuildContext context,
+    User user,
+  ) {
+    showDialog(
+      context: context,
+
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            user.name,
+          ),
+
+          content: Column(
+            mainAxisSize:
+                MainAxisSize.min,
+
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+
+            children: [
+              Text(
+                'Email: ${user.email}',
+              ),
+
+              const SizedBox(height: 10),
+
+              Text(
+                'Phone: ${user.phone}',
+              ),
+
+              const SizedBox(height: 10),
+
+              Text(
+                'Website: ${user.website}',
+              ),
+            ],
+          ),
+
+          actions: [
+            TextButton(
               onPressed: () {
-
-                final title =
-                    controller.text.trim();
-
-                if (title.isEmpty) {
-                  return;
-                }
-
-                context
-                    .read<TaskBloc>()
-                    .add(
-                      AddTask(title),
-                    );
-
-                Navigator.pop(dialogContext);
+                Navigator.pop(context);
               },
 
               child: const Text(
-                'Add',
+                'Close',
               ),
             ),
           ],
