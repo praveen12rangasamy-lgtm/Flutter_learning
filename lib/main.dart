@@ -1,61 +1,144 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() {
-  // Register CartController
-  Get.put(CartController());
-
   runApp(const MyApp());
 }
 
 // =====================================================
-// PRODUCT MODEL
+// TASK MODEL
 // =====================================================
 
-class Product {
-  final String name;
-  final double price;
-  final IconData icon;
+class Task {
+  final String title;
+  final bool isCompleted;
 
-  const Product({
-    required this.name,
-    required this.price,
-    required this.icon,
+  const Task({
+    required this.title,
+    this.isCompleted = false,
   });
+
+  Task copyWith({
+    String? title,
+    bool? isCompleted,
+  }) {
+    return Task(
+      title: title ?? this.title,
+      isCompleted: isCompleted ?? this.isCompleted,
+    );
+  }
 }
 
 // =====================================================
-// CART CONTROLLER
+// EVENTS
 // =====================================================
 
-class CartController extends GetxController {
-  // Observable list
-  final RxList<Product> cartItems = <Product>[].obs;
+// Base event
+abstract class TaskEvent {}
 
-  // Add product
-  void addToCart(Product product) {
-    cartItems.add(product);
+// Add a task
+class AddTask extends TaskEvent {
+  final String title;
+
+  AddTask(this.title);
+}
+
+// Toggle task
+class ToggleTask extends TaskEvent {
+  final int index;
+
+  ToggleTask(this.index);
+}
+
+// Delete task
+class DeleteTask extends TaskEvent {
+  final int index;
+
+  DeleteTask(this.index);
+}
+
+// =====================================================
+// STATE
+// =====================================================
+
+class TaskState {
+  final List<Task> tasks;
+
+  const TaskState({
+    this.tasks = const [],
+  });
+
+  TaskState copyWith({
+    List<Task>? tasks,
+  }) {
+    return TaskState(
+      tasks: tasks ?? this.tasks,
+    );
   }
+}
 
-  // Remove product
-  void removeFromCart(Product product) {
-    cartItems.remove(product);
-  }
+// =====================================================
+// BLOC
+// =====================================================
 
-  // Clear cart
-  void clearCart() {
-    cartItems.clear();
-  }
+class TaskBloc extends Bloc<TaskEvent, TaskState> {
+  TaskBloc() : super(const TaskState()) {
 
-  // Calculate total price
-  double get totalPrice {
-    double total = 0;
+    // -----------------------------------------------
+    // ADD TASK
+    // -----------------------------------------------
 
-    for (final product in cartItems) {
-      total += product.price;
-    }
+    on<AddTask>((event, emit) {
+      final updatedTasks = [
+        ...state.tasks,
+        Task(title: event.title),
+      ];
 
-    return total;
+      emit(
+        state.copyWith(
+          tasks: updatedTasks,
+        ),
+      );
+    });
+
+    // -----------------------------------------------
+    // TOGGLE TASK
+    // -----------------------------------------------
+
+    on<ToggleTask>((event, emit) {
+      final updatedTasks =
+          List<Task>.from(state.tasks);
+
+      final task = updatedTasks[event.index];
+
+      updatedTasks[event.index] =
+          task.copyWith(
+        isCompleted: !task.isCompleted,
+      );
+
+      emit(
+        state.copyWith(
+          tasks: updatedTasks,
+        ),
+      );
+    });
+
+    // -----------------------------------------------
+    // DELETE TASK
+    // -----------------------------------------------
+
+    on<DeleteTask>((event, emit) {
+      final updatedTasks =
+          List<Task>.from(state.tasks);
+
+      updatedTasks.removeAt(event.index);
+
+      emit(
+        state.copyWith(
+          tasks: updatedTasks,
+        ),
+      );
+    });
   }
 }
 
@@ -68,229 +151,72 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
 
-      title: 'Shopping Cart',
+      title: 'BLoC Task Manager',
 
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
 
-      // IMPORTANT:
-      // ProductScreen constructor is not const
-      home: ProductScreen(),
-    );
-  }
-}
+      home: BlocProvider(
+        create: (context) => TaskBloc(),
 
-// =====================================================
-// PRODUCT SCREEN
-// =====================================================
-
-class ProductScreen extends StatelessWidget {
-  ProductScreen({super.key});
-
-  // Product list
-  final List<Product> products = const [
-    Product(
-      name: 'Laptop',
-      price: 65000,
-      icon: Icons.laptop,
-    ),
-    Product(
-      name: 'Smartphone',
-      price: 25000,
-      icon: Icons.phone_android,
-    ),
-    Product(
-      name: 'Headphones',
-      price: 3500,
-      icon: Icons.headphones,
-    ),
-    Product(
-      name: 'Keyboard',
-      price: 1500,
-      icon: Icons.keyboard,
-    ),
-    Product(
-      name: 'Mouse',
-      price: 800,
-      icon: Icons.mouse,
-    ),
-    Product(
-      name: 'Smart Watch',
-      price: 5000,
-      icon: Icons.watch,
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    // Get existing controller
-    final CartController cartController =
-        Get.find<CartController>();
-
-    return Scaffold(
-      // =================================================
-      // APP BAR
-      // =================================================
-
-      appBar: AppBar(
-        title: const Text('Products'),
-
-        actions: [
-          Stack(
-            children: [
-              // Cart button
-              IconButton(
-                onPressed: () {
-                  Get.to(
-                    () => const CartScreen(),
-                  );
-                },
-                icon: const Icon(
-                  Icons.shopping_cart,
-                ),
-              ),
-
-              // Cart count
-              Positioned(
-                right: 5,
-                top: 5,
-                child: Obx(
-                  () => CircleAvatar(
-                    radius: 9,
-                    child: Text(
-                      '${cartController.cartItems.length}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-
-      // =================================================
-      // PRODUCT LIST
-      // =================================================
-
-      body: ListView.builder(
-        padding: const EdgeInsets.all(12),
-
-        itemCount: products.length,
-
-        itemBuilder: (context, index) {
-          final Product product = products[index];
-
-          return Card(
-            margin: const EdgeInsets.only(
-              bottom: 12,
-            ),
-
-            child: ListTile(
-              contentPadding: const EdgeInsets.all(12),
-
-              // Product icon
-              leading: CircleAvatar(
-                child: Icon(product.icon),
-              ),
-
-              // Product name
-              title: Text(
-                product.name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 17,
-                ),
-              ),
-
-              // Product price
-              subtitle: Text(
-                '₹${product.price.toStringAsFixed(0)}',
-              ),
-
-              // Add button
-              trailing: ElevatedButton(
-                onPressed: () {
-                  cartController.addToCart(product);
-
-                  Get.snackbar(
-                    'Added to Cart',
-                    '${product.name} added to cart',
-                    snackPosition:
-                        SnackPosition.BOTTOM,
-                  );
-                },
-                child: const Text('Add'),
-              ),
-            ),
-          );
-        },
+        child: const TaskScreen(),
       ),
     );
   }
 }
 
 // =====================================================
-// CART SCREEN
+// TASK SCREEN
 // =====================================================
 
-class CartScreen extends StatelessWidget {
-  const CartScreen({super.key});
+class TaskScreen extends StatelessWidget {
+  const TaskScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Get the same controller
-    final CartController cartController =
-        Get.find<CartController>();
-
     return Scaffold(
+
       // =================================================
       // APP BAR
       // =================================================
 
       appBar: AppBar(
-        title: const Text('My Cart'),
+        title: const Text('Task Manager'),
 
         actions: [
           IconButton(
             onPressed: () {
-              cartController.clearCart();
-
-              Get.snackbar(
-                'Cart',
-                'Cart cleared',
-                snackPosition:
-                    SnackPosition.BOTTOM,
-              );
+              showAddTaskDialog(context);
             },
+
             icon: const Icon(
-              Icons.delete_sweep,
+              Icons.add,
             ),
           ),
         ],
       ),
 
       // =================================================
-      // CART BODY
+      // BODY
       // =================================================
 
-      body: Obx(
-        () {
-          // Empty cart
-          if (cartController.cartItems.isEmpty) {
+      body: BlocBuilder<TaskBloc, TaskState>(
+        builder: (context, state) {
+
+          // Empty state
+          if (state.tasks.isEmpty) {
             return const Center(
               child: Column(
                 mainAxisAlignment:
                     MainAxisAlignment.center,
+
                 children: [
                   Icon(
-                    Icons.shopping_cart_outlined,
+                    Icons.task_alt,
                     size: 80,
                     color: Colors.grey,
                   ),
@@ -298,11 +224,20 @@ class CartScreen extends StatelessWidget {
                   SizedBox(height: 20),
 
                   Text(
-                    'Your cart is empty',
+                    'No tasks yet',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight:
                           FontWeight.bold,
+                    ),
+                  ),
+
+                  SizedBox(height: 8),
+
+                  Text(
+                    'Tap + to add a task',
+                    style: TextStyle(
+                      color: Colors.grey,
                     ),
                   ),
                 ],
@@ -310,122 +245,187 @@ class CartScreen extends StatelessWidget {
             );
           }
 
-          // Cart contains products
-          return Column(
-            children: [
-              // =================================================
-              // CART ITEMS
-              // =================================================
+          // Task list
+          return ListView.builder(
+            padding: const EdgeInsets.all(12),
 
-              Expanded(
-                child: ListView.builder(
-                  padding:
-                      const EdgeInsets.all(12),
+            itemCount: state.tasks.length,
 
-                  itemCount:
-                      cartController.cartItems.length,
+            itemBuilder: (context, index) {
 
-                  itemBuilder: (context, index) {
-                    final Product product =
-                        cartController
-                            .cartItems[index];
+              final task = state.tasks[index];
 
-                    return Card(
-                      margin:
-                          const EdgeInsets.only(
-                        bottom: 10,
-                      ),
-
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          child: Icon(
-                            product.icon,
-                          ),
-                        ),
-
-                        title: Text(
-                          product.name,
-                          style:
-                              const TextStyle(
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
-
-                        subtitle: Text(
-                          '₹${product.price.toStringAsFixed(0)}',
-                        ),
-
-                        trailing: IconButton(
-                          onPressed: () {
-                            cartController
-                                .removeFromCart(
-                              product,
-                            );
-                          },
-                          icon: const Icon(
-                            Icons
-                                .remove_circle,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+              return Card(
+                margin: const EdgeInsets.only(
+                  bottom: 10,
                 ),
-              ),
 
-              // =================================================
-              // TOTAL
-              // =================================================
+                child: ListTile(
 
-              Container(
-                width: double.infinity,
+                  // Checkbox
+                  leading: Checkbox(
+                    value: task.isCompleted,
 
-                padding:
-                    const EdgeInsets.all(20),
+                    onChanged: (_) {
+                      context.read<TaskBloc>().add(
+                        ToggleTask(index),
+                      );
+                    },
+                  ),
 
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(
-                      color:
-                          Colors.grey.shade300,
+                  // Task title
+                  title: Text(
+                    task.title,
+
+                    style: TextStyle(
+                      fontSize: 16,
+
+                      decoration:
+                          task.isCompleted
+                              ? TextDecoration
+                                  .lineThrough
+                              : TextDecoration.none,
                     ),
                   ),
-                ),
 
-                child: Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment
-                          .spaceBetween,
+                  // Delete
+                  trailing: IconButton(
+                    onPressed: () {
 
-                  children: [
-                    const Text(
-                      'Total',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
+                      context
+                          .read<TaskBloc>()
+                          .add(
+                            DeleteTask(index),
+                          );
+                    },
+
+                    icon: const Icon(
+                      Icons.delete,
                     ),
+                  ),
 
-                    Obx(
-                      () => Text(
-                        '₹${cartController.totalPrice.toStringAsFixed(0)}',
-                        style:
-                            const TextStyle(
-                          fontSize: 20,
-                          fontWeight:
-                              FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+                  onTap: () {
+                    context
+                        .read<TaskBloc>()
+                        .add(
+                          ToggleTask(index),
+                        );
+                  },
                 ),
-              ),
-            ],
+              );
+            },
           );
         },
       ),
+
+      // =================================================
+      // BOTTOM TASK COUNT
+      // =================================================
+
+      bottomNavigationBar:
+          BlocBuilder<TaskBloc, TaskState>(
+        builder: (context, state) {
+
+          final completedTasks =
+              state.tasks
+                  .where(
+                    (task) => task.isCompleted,
+                  )
+                  .length;
+
+          return Container(
+            padding: const EdgeInsets.all(16),
+
+            child: Text(
+              'Tasks: ${state.tasks.length}  |  '
+              'Completed: $completedTasks',
+
+              textAlign: TextAlign.center,
+
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ===================================================
+  // ADD TASK DIALOG
+  // ===================================================
+
+  void showAddTaskDialog(BuildContext context) {
+
+    final TextEditingController controller =
+        TextEditingController();
+
+    showDialog(
+      context: context,
+
+      builder: (dialogContext) {
+
+        return AlertDialog(
+          title: const Text(
+            'Add Task',
+          ),
+
+          content: TextField(
+            controller: controller,
+
+            autofocus: true,
+
+            decoration:
+                const InputDecoration(
+              labelText: 'Task',
+              hintText:
+                  'Enter task name',
+            ),
+          ),
+
+          actions: [
+
+            // Cancel
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+
+              child: const Text(
+                'Cancel',
+              ),
+            ),
+
+            // Add
+            ElevatedButton(
+              onPressed: () {
+
+                final title =
+                    controller.text.trim();
+
+                if (title.isEmpty) {
+                  return;
+                }
+
+                context
+                    .read<TaskBloc>()
+                    .add(
+                      AddTask(title),
+                    );
+
+                Navigator.pop(dialogContext);
+              },
+
+              child: const Text(
+                'Add',
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
