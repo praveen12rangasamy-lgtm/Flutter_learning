@@ -61,33 +61,75 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/images/
+    - assets/logo/
 
-  # An image asset can refer to one or more resolution-specific "variants", see
-  # https://flutter.dev/to/resolution-aware-images
+  fonts:
+    - family: Google Sans
+      fonts:
+        - asset: assets/fonts/GoogleSans-Regular.ttf
+        - asset: assets/fonts/GoogleSans-Italic.ttf
+          style: italic
+        - asset: assets/fonts/GoogleSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/GoogleSans-MediumItalic.ttf
+          weight: 500
+          style: italic
+        - asset: assets/fonts/GoogleSans-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/GoogleSans-BoldItalic.ttf
+          weight: 700
+          style: italic
+        - asset: assets/fonts/GoogleSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/GoogleSans-SemiBoldItalic.ttf
+          weight: 600
+          style: italic
 
-  # For details regarding adding assets from package dependencies, see
-  # https://flutter.dev/to/asset-from-package
+    - family: Scaver
+      fonts:
+        - asset: assets/fonts/Scaver-Regular-BF69add6b13806e.ttf
+        - asset: assets/fonts/Scaver-Italic-BF69add6b14d9c5.ttf
+          style: italic
+        - asset: assets/fonts/Scaver-Bold-BF69add6b0c3a74.ttf
+          weight: 700
+        - asset: assets/fonts/Scaver-BoldItalic-BF69add6b08087c.ttf
+          weight: 700
+          style: italic
+        - asset: assets/fonts/Scaver-Medium-BF69add6b1210f5.ttf
+          weight: 500
+        - asset: assets/fonts/Scaver-MediumItalic-BF69add6b0af747.ttf
+          weight: 500
+          style: italic
+        - asset: assets/fonts/Scaver-Light-BF69add6b109a2f.ttf
+          weight: 300
+        - asset: assets/fonts/Scaver-LightItalic-BF69add6b142723.ttf
+          weight: 300
+          style: italic
+        - asset: assets/fonts/Scaver-ExtraLight-BF69add6b0d9719.ttf
+          weight: 200
+        - asset: assets/fonts/Scaver-ExtraLightItalic-BF69add6b0ce852.ttf
+          weight: 200
+          style: italic
+        - asset: assets/fonts/Scaver-ExtraBold-BF69add6b0f1846.ttf
+          weight: 800
+        - asset: assets/fonts/Scaver-ExtraBoldItalic-BF69add6b0e56b3.ttf
+          weight: 800
+          style: italic
+        - asset: assets/fonts/Scaver-Black-BF69add6b08da24.ttf
+          weight: 900
+        - asset: assets/fonts/Scaver-BlackItalic-BF69add6b0b9a9f.ttf
+          weight: 900
+          style: italic
+        - asset: assets/fonts/Scaver-SemiBold-BF69add6b12d146.ttf
+          weight: 600
+        - asset: assets/fonts/Scaver-SemiBoldItalic-BF69add6b0988b4.ttf
+          weight: 600
+          style: italic
+        - asset: assets/fonts/Scaver-Thin-BF69add6b114d5a.ttf
+          weight: 100
+        - asset: assets/fonts/Scaver-ThinItalic-BF69add6b0a3008.ttf
+          weight: 100
+          style: italic
 
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
-  #
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/to/font-from-package
